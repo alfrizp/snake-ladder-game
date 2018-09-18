@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Snake Ladder</title>
+</head>
+<style>
+  html {
+    font-family: monospace
+  }
+
+  .tdClass {
+    width: 150px;
+    white-space:pre;
+    text-align: center;
+    border: 1px solid black;
+  }
+</style>
+<body>
+  <h1>Snake Ladder</h1>
+
+  <label for="">Align</label>
+  <select id="selectTypeTile">
+    <option value="ladder">Ladder</option>
+    <option value="snake">Snake</option>
+  </select>
+  <br>
+  <label for="">Start Poss</label>
+  <input type="text" id="startPossInput" placeholder="1" required>
+  <br>
+  <label for="">End Poss</label>
+  <input type="text" id="endPossInput" placeholder="1" required>
+  <br>
+  <button id="adminSubmitButton" onclick="adminSubmit()">Submit</button>
+  <button id="endInitButton" onclick="endInit()">End Initialize</button>
+  <button id="randSnakeLadderButton" onclick="randSnakeLadder()" >Get Random Snake/Ladder</button>
+  <br><br>
+
+  <div>
+    <table id="boardTable">
+
+    </table>
+  </div>
+
+  <br>
+
+  <button id="roleDiceButton" onclick="roleDice()" disabled>Role Dice</button>
+  <button id="nextPlayerButton" onclick="nextPlayer()" disabled>Next Player</button>
+  <br>
+  <div id="cheat" style="display:none;">
+    Cheat: 
+    <button onclick="roleDice(1)">1</button>
+    <button onclick="roleDice(2)">2</button>
+    <button onclick="roleDice(3)">3</button>
+    <button onclick="roleDice(4)">4</button>
+    <button onclick="roleDice(5)">5</button>
+    <button onclick="roleDice(6)">6</button>
+  </div>
+
+  <br>
+
+  <div id="turn"></div>
+  <div id="playerDiceInfo"></div>
+  <div id="playerPossInfo"></div>
+  <div>
+    <h3>History</h3>
+    <pre>
+      <div id="history"></div>
+    </pre>
+  </div>
+
+
+  <br><br>
+
+  <br>
+  <br>
+
+
+  <script>
+    var boardElement = document.getElementById('board')
+    var boardTableElement = document.getElementById('boardTable')
+
+    var historyElement = document.getElementById('history')
+
+    var selectTypeTile = document.getElementById("selectTypeTile");
+    // var selectTypeValue = selectTypeTile.options[selectTypeTile.selectedIndex].value;
+
+    var startPossInputElement = document.getElementById('startPossInput')
+    var endPossInputElement = document.getElementById('endPossInput')
+
+    var adminSubmitButton = document.getElementById('adminSubmitButton')
+    var endInitButton = document.getElementById('endInitButton')
+    var randSnakeLadderButton = document.getElementById('randSnakeLadderButton')
+
+    var roleDiceButton = document.getElementById('roleDiceButton')
+    var nextPlayerButton = document.getElementById('nextPlayerButton')
+
+    var turnElement = document.getElementById('turn')
+    var playerDiceInfoElement = document.getElementById('playerDiceInfo')
+    var playerPossInfoElement = document.getElementById('playerPossInfo')
+
+    class TileClass {
+      constructor(position, row) {
+        this.type = null
+        this.to = null
+        this.playerOne = null
+        this.playerTwo = null
+        this.player = null
+        this.players = []
+        this.position = position
+        this.row = row
+        this.from = null
+      }
+    }
+
+    class PLAYER {
+      constructor(name, id) {
+        this.name = name
+        this.position = 1
+        this.id = id
+      }
+    }
+
+    var playerOne = new PLAYER('P1', 'playerOne')
+    var playerTwo = new PLAYER('P2', 'playerTwo')
+
+    var TURN = 1
+    var NOW_PLAYER = TURN % 2 === 0 ? playerTwo : playerOne
+
+    var BOARD = {}
+    var BOARD_LENGTH = 5
+    var isInit = true
+
+    var rowBoard = 0
+    window.onload = function(e) {
+      for (let i = 1; i <= 25; i++) {
+        if ((i-1) % 5 === 0) rowBoard++
+        BOARD[i] = new TileClass(i, rowBoard)
+      }
+
+      renderBoard()
+    }
+
+    function adminSubmit() {
+      var typeValue = selectTypeTile.options[selectTypeTile.selectedIndex].value;
+      var startPoss = Number(startPossInputElement.value)
+      var endPoss = Number(endPossInputElement.value)
+
+      try {
+        if (typeValue === 'snake') createSnake(startPoss, endPoss)
+        if (typeValue === 'ladder') createLadder(startPoss, endPoss)
+      } catch (err) {
+        return alert(err)
+      }
+
+      return renderBoard()
+    }
+
+    function randSnakeLadder() {
+      var typeArr = ['snake', 'ladder']
+      var randIdxTypeArr = randNum(2)
+
+      var randStartPos = randNum(25)
+      var randEndPos = randNum(25)
+
+      try {
+        if(typeArr[randIdxTypeArr - 1] === 'snake') createSnake(randStartPos, randEndPos)
+        if(typeArr[randIdxTypeArr - 1] === 'ladder') createLadder(randStartPos, randEndPos)
+      } catch (err) {
+        return randSnakeLadder()
+      }
+
+      return renderBoard()
+    }
+
+    function randNum(max) {
+      return Math.ceil(Math.random() * max)
+    }
+
+    function createSnake(startPoss, endPoss) {
+      var startBoard = BOARD[startPoss]
+      var endBoard = BOARD[endPoss]
+
+      if (
+        startPoss === 1 ||
+        startPoss === BOARD_LENGTH * BOARD_LENGTH ||
+        endPoss === 1 ||
+        endPoss === BOARD_LENGTH * BOARD_LENGTH
+      ) throw new Error('Posisi awal/akhir snake tidak boleh di start/finish')
+      if (startBoard.type !== null) throw new Error('Posisi awal sudah terisi')
+      if (startBoard.from !== null) throw new Error('Posisi awal sudah jadi tujuan')
+      if (endBoard.row === startBoard.row) throw new Error('Posisi akhir snake tidak boleh sejajar')
+      if (endBoard.row > startBoard.row) throw new Error('Posisi akhir snake tidak boleh diatas')
+
+      BOARD[startPoss] = { ...BOARD[startPoss], type: 'snake', to: endPoss }
+      BOARD[endPoss] = { ...BOARD[endPoss], from: startPoss }
+    }
+
+    function createLadder(startPoss, endPoss) {
+      var startBoard = BOARD[startPoss]
+      var endBoard = BOARD[endPoss]
+
+      if (
+        startPoss === 1 ||
+        startPoss === BOARD_LENGTH * BOARD_LENGTH ||
+        endPoss === 1 ||
+        endPoss === BOARD_LENGTH * BOARD_LENGTH
+      ) throw new Error('Posisi awal/akhir tangga tidak boleh di start/finish')
+      if (startBoard.type !== null) throw new Error('Posisi awal sudah terisi')
+      if (startBoard.from !== null) throw new Error('Posisi awal sudah jadi tujuan')
+      if (endBoard.row === startBoard.row) throw new Error('Posisi akhir tangga tidak boleh sejajar')
+      if (endBoard.row < startBoard.row) throw new Error('Posisi akhir tangga tidak boleh diatas')
+
+      BOARD[startPoss] = { ...BOARD[startPoss], type: 'ladder', to: endPoss }
+      BOARD[endPoss] = { ...BOARD[endPoss], from: startPoss }
+    }
+
+    function renderBoard() {
+      var tempBoardArr = Object.keys(BOARD).map(data => BOARD[data])
+
+      var chunkedArr = chunkArray(tempBoardArr, 5)
+      var boardTempStr = ''
+      for (let i = chunkedArr.length; i > 0; i--) {
+        boardTempStr += '<tr>';
+        (i % 2 !== 0)
+          ? chunkedArr[i-1].forEach(val => boardTempStr += createColumn(val) )
+          : chunkedArr[i-1].reverse().forEach(val => boardTempStr += createColumn(val) );
+
+        boardTempStr += '</tr>';
+      }
+
+      boardTableElement.innerHTML = boardTempStr
+    }
+
+    function createColumn(val){
+      return `<td class="tdClass">${val.position} \n\n ${(val.playerOne !== null) ? val.playerOne.name : ''} ${(val.playerTwo !== null) ? val.playerTwo.name : ''} \n\n ${(val.type !== null) ? val.type + ' -> ' + val.to : ''} </td>`
+    }
+
+    function chunkArray(myArray, chunk_size){
+      var index = 0;
+      var arrayLength = myArray.length;
+      var tempArray = [];
+
+      for (index = 0; index < arrayLength; index += chunk_size) {
+        var myChunk = myArray.slice(index, index+chunk_size);
+        tempArray.push(myChunk);
+      }
+
+      return tempArray;
+    }
+
+    function endInit() {
+      isInit = false
+
+      selectTypeTile.disabled = true
+      startPossInputElement.disabled = true
+      endPossInputElement.disabled = true
+      adminSubmitButton.disabled = true
+      endInitButton.disabled = true
+      randSnakeLadderButton.disabled = true
+
+      roleDiceButton.disabled = false
+
+      renderPlayer()
+    }
+
+    function renderPlayer() {
+      turnElement.innerHTML = `<h3>${NOW_PLAYER.name} turn</h3>`
+    }
+
+    function roleDice(dice = null) {
+      var resStr = ''
+
+      if (dice === null) dice = randNum(6)
+      resStr += `TURN: ${TURN} \n`
+      resStr += `${NOW_PLAYER.name} mendapat dadu ${dice} \n`
+
+      //Delete old poss
+      BOARD[NOW_PLAYER.position][NOW_PLAYER.id] = null
+
+      // Check if over than 25
+      if (NOW_PLAYER.position + dice === 25) {
+        return alert(`${NOW_PLAYER.name} menang!!!`)
+
+        return setGameOver(dice)
+      } else if (NOW_PLAYER.position + dice > 25) {
+        var diff = NOW_PLAYER.position + dice - 25
+        NOW_PLAYER.position = 25 - diff
+      } else {
+        NOW_PLAYER.position = NOW_PLAYER.position + dice
+      }
+
+      if (BOARD[NOW_PLAYER.position].type !== null) {
+        resStr += `${NOW_PLAYER.name} berhenti di nomor ${NOW_PLAYER.position} adalah kotak yang ada ${BOARD[NOW_PLAYER.position].type} \n`
+        NOW_PLAYER.position = BOARD[NOW_PLAYER.position].to
+      }
+      resStr += `Posisi ${NOW_PLAYER.name} sekarang ada di kotak ${NOW_PLAYER.position}`
+      resStr += '\n'
+      resStr += '======================================== \n'
+
+      console.log(resStr)
+
+      //Assign new poss
+      BOARD[NOW_PLAYER.position][NOW_PLAYER.id] = NOW_PLAYER
+
+      roleDiceButton.disabled = true
+      nextPlayerButton.disabled = false
+
+      // innerHtml for playerInfo
+      historyElement.prepend(resStr)
+
+      renderBoard()
+    }
+
+    function nextPlayer() {
+      TURN++
+      NOW_PLAYER = TURN % 2 === 0 ? playerTwo : playerOne
+
+      nextPlayerButton.disabled = true
+      roleDiceButton.disabled = false
+
+      renderPlayer()
+    }
+
+    function setGameOver(dice) {
+      nextPlayerButton.disabled = true
+      roleDiceButton.disabled = true
+      NOW_PLAYER.position = NOW_PLAYER.position + dice
+      BOARD[NOW_PLAYER.position][NOW_PLAYER.id] = NOW_PLAYER
+
+      renderBoard()
+    }
+
+    function activateCheat() {
+      var cheatElement = document.getElementById('cheat')
+      cheatElement.style.display = 'block'
+    }
+
+    console.log('Call activateCheat() to activate cheat feature')
+  </script>
+</body>
+</html>
