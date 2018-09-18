@@ -190,9 +190,10 @@
         endPoss >= BOARD_LENGTH * BOARD_LENGTH
       ) throw new Error('Posisi awal/akhir snake tidak boleh di kurang dr start/lebih dr finish')
       if (startBoard.type !== null) throw new Error('Posisi awal sudah terisi')
-      if (startBoard.from !== null) throw new Error('Posisi awal sudah jadi tujuan')
+      // if (startBoard.from !== null) throw new Error('Posisi awal sudah jadi tujuan')
       if (endBoard.row === startBoard.row) throw new Error('Posisi akhir snake tidak boleh sejajar')
       if (endBoard.row > startBoard.row) throw new Error('Posisi akhir snake tidak boleh diatas')
+      if (endBoard.type !== null) throw new Error('Posisi akhir sudah menjadi awal snake/ladder')
 
       BOARD[startPoss] = { ...BOARD[startPoss], type: 'snake', to: endPoss }
       BOARD[endPoss] = { ...BOARD[endPoss], from: startPoss }
@@ -209,9 +210,10 @@
         endPoss >= BOARD_LENGTH * BOARD_LENGTH
       ) throw new Error('Posisi awal/akhir snake tidak boleh di kurang dr start/lebih dr finish')
       if (startBoard.type !== null) throw new Error('Posisi awal sudah terisi')
-      if (startBoard.from !== null) throw new Error('Posisi awal sudah jadi tujuan')
+      // if (startBoard.from !== null) throw new Error('Posisi awal sudah jadi tujuan')
       if (endBoard.row === startBoard.row) throw new Error('Posisi akhir tangga tidak boleh sejajar')
       if (endBoard.row < startBoard.row) throw new Error('Posisi akhir tangga tidak boleh diatas')
+      if (endBoard.type !== null) throw new Error('Posisi akhir sudah menjadi awal snake/ladder')
 
       BOARD[startPoss] = { ...BOARD[startPoss], type: 'ladder', to: endPoss }
       BOARD[endPoss] = { ...BOARD[endPoss], from: startPoss }
@@ -294,7 +296,8 @@
 
       if (BOARD[NOW_PLAYER.position].type !== null) {
         resStr += `${NOW_PLAYER.name} berhenti di nomor ${NOW_PLAYER.position} adalah kotak yang ada ${BOARD[NOW_PLAYER.position].type} \n`
-        NOW_PLAYER.position = BOARD[NOW_PLAYER.position].to
+        // NOW_PLAYER.position = BOARD[NOW_PLAYER.position].to
+        setPlayerPosition(BOARD[NOW_PLAYER.position].to)
       }
       resStr += `Posisi ${NOW_PLAYER.name} sekarang ada di kotak ${NOW_PLAYER.position}`
       resStr += '\n'
@@ -312,6 +315,13 @@
       historyElement.prepend(resStr)
 
       renderBoard()
+    }
+
+    function setPlayerPosition(dstBoardPoss) {
+      var dstBoard = BOARD[dstBoardPoss]
+      if (dstBoard.type === null) return
+      NOW_PLAYER.position = dstBoard.to
+      return setPlayerPosition(dstBoard.to)
     }
 
     function nextPlayer() {
