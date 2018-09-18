@@ -184,11 +184,11 @@
       var endBoard = BOARD[endPoss]
 
       if (
-        startPoss === 1 ||
-        startPoss === BOARD_LENGTH * BOARD_LENGTH ||
-        endPoss === 1 ||
-        endPoss === BOARD_LENGTH * BOARD_LENGTH
-      ) throw new Error('Posisi awal/akhir snake tidak boleh di start/finish')
+        startPoss <= 1 ||
+        startPoss >= BOARD_LENGTH * BOARD_LENGTH ||
+        endPoss <= 1 ||
+        endPoss >= BOARD_LENGTH * BOARD_LENGTH
+      ) throw new Error('Posisi awal/akhir snake tidak boleh di kurang dr start/lebih dr finish')
       if (startBoard.type !== null) throw new Error('Posisi awal sudah terisi')
       if (startBoard.from !== null) throw new Error('Posisi awal sudah jadi tujuan')
       if (endBoard.row === startBoard.row) throw new Error('Posisi akhir snake tidak boleh sejajar')
@@ -203,11 +203,11 @@
       var endBoard = BOARD[endPoss]
 
       if (
-        startPoss === 1 ||
-        startPoss === BOARD_LENGTH * BOARD_LENGTH ||
-        endPoss === 1 ||
-        endPoss === BOARD_LENGTH * BOARD_LENGTH
-      ) throw new Error('Posisi awal/akhir tangga tidak boleh di start/finish')
+        startPoss <= 1 ||
+        startPoss >= BOARD_LENGTH * BOARD_LENGTH ||
+        endPoss <= 1 ||
+        endPoss >= BOARD_LENGTH * BOARD_LENGTH
+      ) throw new Error('Posisi awal/akhir snake tidak boleh di kurang dr start/lebih dr finish')
       if (startBoard.type !== null) throw new Error('Posisi awal sudah terisi')
       if (startBoard.from !== null) throw new Error('Posisi awal sudah jadi tujuan')
       if (endBoard.row === startBoard.row) throw new Error('Posisi akhir tangga tidak boleh sejajar')
